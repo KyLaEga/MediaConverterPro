@@ -2,53 +2,50 @@
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/KyLaEga/MediaConverterPro/build.yml?branch=main&label=Build&logo=github)](https://github.com/KyLaEga/MediaConverterPro/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Media Converter Pro** — это мощное кроссплатформенное Desktop-приложение, созданное для автоматической пакетной конвертации комиксов и изображений в форматы **CBZ** и **PDF**.
+**Media Converter Pro** is a powerful, cross-platform desktop application designed for the automated batch conversion of comics and images into **CBZ** and **PDF** formats.
 
-Разработано с использованием современного интерфейса (PySide6) и поддерживает рекурсивную обработку огромного числа файлов без необходимости ручных подтверждений.
-
----
-
-## 🎨 Особенности (Features)
-- **Пакетная Обработка (Batch Processing)**: Загрузите десятки архивов (`.zip`, `.cbz`) или папок с изображениями — программа сама выстроит их в очередь и сконвертирует.
-- **Поддержка Мультивыбора**: Можно выбирать как отдельные архивы, так и целые директории для рекурсивного поиска.
-- **Двуязычный Интерфейс**: Полная поддержка русского и английского языков (переключение на лету).
-- **Светлая и Темная Темы**: Элегантная дизайн-система `ThemeManager`, которая подстраивается под ваши предпочтения.
-- **Многопоточность**: Графический интерфейс никогда не зависает благодаря вынесению тяжелой логики в отдельные потоки (`QThread`).
-- **Раздельные пути вывода**: Вы можете указать разные директории для генерации CBZ и PDF файлов. Если нужный формат вам не нужен — просто снимите галочку.
+Built with a modern UI (PySide6), it supports recursive processing of a huge number of files without requiring manual confirmations.
 
 ---
 
-## 🚀 Установка и Запуск (Для Разработчиков)
-Если вы хотите запустить проект локально через Python:
+## 🎨 Features
+- **Batch Processing**: Load dozens of archives (`.zip`, `.cbz`) or image folders — the program will automatically queue and convert them.
+- **Multi-Selection Support**: You can select specific archives as well as entire directories for recursive scanning.
+- **Bilingual Interface**: Full support for English and Russian (switching on the fly).
+- **Light & Dark Themes**: An elegant `ThemeManager` design system that adapts to your preferences.
+- **Multithreading**: The GUI never freezes, thanks to heavy logic processing in background threads (`QThread`).
+- **Separate Output Paths**: Specify different directories for generating CBZ and PDF files. Uncheck a format if you don't need it.
 
-1. Склонируйте репозиторий:
+---
+
+## 🚀 Installation and Usage (For Developers)
+If you want to run the project locally via Python:
+
+1. Clone the repository:
    ```bash
    git clone https://github.com/KyLaEga/MediaConverterPro.git
    cd MediaConverterPro
    ```
 
-2. Запустите стартовый скрипт (он сам установит нужные зависимости из `requirements.txt` и запустит приложение):
+2. Run the startup script (it will automatically install the required dependencies from `requirements.txt` and launch the app):
    ```bash
    ./start.sh
    ```
 
 ---
 
-## 📦 Скачать Готовое Приложение
-Мы используем **GitHub Actions** для автоматической компиляции проекта в готовые к использованию нативные приложения (без необходимости установки Python).
+## 📦 Download Ready-to-Use Application
+We use **GitHub Actions** to automatically compile the project into native, ready-to-use applications (no Python installation required).
 
-Вы можете скачать последние собранные файлы во вкладке **[Actions -> Build & Release](https://github.com/KyLaEga/MediaConverterPro/actions)** или в разделе **Releases**.
-- 🍎 **macOS**: `MediaConverterPro-macOS.zip` (распакуйте и запустите `.app`)
+You can download the latest built files in the **[Actions -> Build & Release](https://github.com/KyLaEga/MediaConverterPro/actions)** tab or in the **Releases** section.
+- 🍎 **macOS**: `MediaConverterPro-macOS.zip` (extract and run the `.app`)
 - 🪟 **Windows**: `MediaConverterPro-Windows.exe`
-- 🐧 **Linux**: `MediaConverterPro-Linux` (исполняемый бинарник)
+- 🐧 **Linux**: `MediaConverterPro-Linux` (executable binary)
 
 ---
 
-## 🛠 Технологии
-- **Язык**: Python 3.9+
-- **Интерфейс**: PySide6 (Qt)
-- **Обработка графики**: Pillow (PIL)
-- **Сборка**: PyInstaller + GitHub Actions
-
----
-*Сделано с ❤️ для удобного чтения комиксов.*
+## 🛠 Technologies
+- **Language**: Python 3.9+
+- **Interface**: PySide6 (Qt)
+- **Image Processing**: Pillow (PIL)
+- **Build Tools**: PyInstaller + GitHub Actions

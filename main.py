@@ -1,6 +1,4 @@
 import sys
-import os
-from pathlib import Path
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -8,7 +6,7 @@ from PySide6.QtWidgets import (
     QProgressBar, QListWidget, QMessageBox, QComboBox
 )
 from PySide6.QtGui import QShortcut, QKeySequence
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import QThread, Signal
 
 from theme import ThemeManager
 from converter import OptimizedMediaConverter
@@ -57,7 +55,8 @@ class ConversionWorker(QThread):
                     filename = target.stem if target.is_file() else target.name
                     
                     if self.make_cbz and self.cbz_out:
-                        cbz_path = self.converter.to_cbz(images, filename, self.cbz_out)
+                        base = temp_dir if temp_dir else target
+                        cbz_path = self.converter.to_cbz(images, filename, self.cbz_out, base_dir=base)
                         self.log.emit(self.tr["status_success_cbz"].format(name=cbz_path.name))
                         
                     if self.make_pdf and self.pdf_out:

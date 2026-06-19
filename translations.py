@@ -27,16 +27,6 @@ TRANSLATIONS = {
         "status_success_pdf": " ✓ Создан PDF: {name}",
         "status_error_target": " Ошибка при обработке {name}: {error}",
         "status_done": "Конвертация завершена успешно!",
-        "tt_add_files": "Выберите отдельные архивы (.zip, .cbz)",
-        "tt_add_folder": "Выберите папку (программа сама найдет все архивы и картинки внутри)",
-        "tt_clear": "Очистить весь список",
-        "tt_source_list": "Дважды кликните или нажмите Delete, чтобы удалить файл",
-        "tt_chk_cbz": "Создать формат CBZ (архив с картинками)",
-        "tt_chk_pdf": "Создать формат PDF",
-        "tt_start": "Запустить процесс конвертации",
-        "tt_lang": "Изменить язык интерфейса",
-        "tt_theme": "Переключить светлую/темную тему",
-        "tt_help": "Справка по использованию",
         "help_title": "Справка: Как использовать ComiConv",
         "help_text": (
             "<b>Добавить файлы</b>: Выберите один или несколько архивов (.zip, .cbz) для обработки.<br><br>"
@@ -79,16 +69,6 @@ TRANSLATIONS = {
         "status_success_pdf": " ✓ Created PDF: {name}",
         "status_error_target": " Error processing {name}: {error}",
         "status_done": "Conversion completed successfully!",
-        "tt_add_files": "Select specific archives (.zip, .cbz)",
-        "tt_add_folder": "Select a folder (the program will find all archives and images inside)",
-        "tt_clear": "Clear the entire list",
-        "tt_source_list": "Double click or press Delete to remove an item",
-        "tt_chk_cbz": "Create CBZ format (comic archive)",
-        "tt_chk_pdf": "Create PDF format",
-        "tt_start": "Start the conversion process",
-        "tt_lang": "Change interface language",
-        "tt_theme": "Toggle light/dark theme",
-        "tt_help": "Usage Help",
         "help_title": "Help: How to use ComiConv",
         "help_text": (
             "<b>Add Files</b>: Select one or more archives (.zip, .cbz) to process.<br><br>"

@@ -43,7 +43,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    - name: Build executable with PyInstaller
+    - name: Build executable with PyInstaller (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        pyinstaller --noconfirm --onedir --windowed --name "ComiConv" main.py
+        
+    - name: Build executable with PyInstaller (Windows/Linux)
+      if: runner.os != 'macOS'
       run: |
         pyinstaller --noconfirm --onefile --windowed --name "ComiConv" main.py
         

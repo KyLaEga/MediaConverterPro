@@ -1,4 +1,3 @@
-import os
 import zipfile
 import shutil
 import re
@@ -36,10 +35,9 @@ class OptimizedMediaConverter:
                 # Check directories for images (including the source dir itself)
                 directories_to_check = [source] + [d for d in source.rglob('*') if d.is_dir()]
                 for directory in directories_to_check:
-                    if "temp_extract" not in directory.name:
-                        has_images = any(p.suffix.lower() in self.valid_extensions for p in directory.iterdir() if p.is_file())
-                        if has_images:
-                            targets.add(directory)
+                    has_images = any(p.suffix.lower() in self.valid_extensions for p in directory.iterdir() if p.is_file())
+                    if has_images:
+                        targets.add(directory)
                             
         # Sort targets by name or absolute path for consistent ordering
         sorted_targets = list(targets)
@@ -72,7 +70,7 @@ class OptimizedMediaConverter:
         if temp_dir and temp_dir.exists():
             shutil.rmtree(temp_dir, ignore_errors=True)
 
-    def to_cbz(self, images, filename, output_dir):
+    def to_cbz(self, images, filename, output_dir, base_dir=None):
         cbz_path = Path(output_dir) / f"{filename}.cbz"
         
         if not images:
@@ -80,7 +78,11 @@ class OptimizedMediaConverter:
 
         with zipfile.ZipFile(cbz_path, 'w', zipfile.ZIP_DEFLATED) as cbz:
             for img in images:
-                cbz.write(img, arcname=img.name)
+                if base_dir:
+                    arcname = str(img.relative_to(base_dir))
+                else:
+                    arcname = img.name
+                cbz.write(img, arcname=arcname)
         
         return cbz_path
 

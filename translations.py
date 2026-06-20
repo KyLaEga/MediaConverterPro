@@ -46,7 +46,10 @@ TRANSLATIONS = {
         "dlg_select_folder": "Выберите папку с комиксами",
         "dlg_select_out_folder": "Выберите папку вывода",
         "placeholder_folder": "Выберите папку...",
-        "theme_toggle": "Сменить тему"
+        "theme_toggle": "Сменить тему",
+        "btn_cancel": "Прервать",
+        "status_interrupting": "Прерывание процесса...",
+        "status_interrupted": "Конвертация прервана пользователем."
     },
     "en": {
         "app_title": "ComiConv",
@@ -95,6 +98,9 @@ TRANSLATIONS = {
         "dlg_select_folder": "Select folder with comics",
         "dlg_select_out_folder": "Select output folder",
         "placeholder_folder": "Select folder...",
-        "theme_toggle": "Toggle Theme"
+        "theme_toggle": "Toggle Theme",
+        "btn_cancel": "Cancel",
+        "status_interrupting": "Interrupting process...",
+        "status_interrupted": "Conversion interrupted by user."
     }
 }

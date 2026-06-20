@@ -34,7 +34,7 @@ class ConversionWorker(QThread):
     def run(self):
         try:
             self.log.emit(self.tr["status_scan"])
-            targets = self.converter.find_comics(self.source_paths)
+            targets = self.converter.find_comics(self.source_paths, cancel_check=self.isInterruptionRequested)
 
             if not targets:
                 self.log.emit(self.tr["status_no_comics"])
@@ -48,6 +48,7 @@ class ConversionWorker(QThread):
                 if self.isInterruptionRequested():
                     break
 
+                temp_dir = None
                 try:
                     self.log.emit(self.tr["status_processing"].format(current=i+1, total=total, name=target.name))
 
@@ -65,9 +66,8 @@ class ConversionWorker(QThread):
                         self.log.emit(self.tr["status_skip_all_same"].format(name=target.name))
                         continue
 
-                    temp_dir = None
                     try:
-                        images, temp_dir = self.converter.extract_and_prepare(target)
+                        images, temp_dir = self.converter.extract_and_prepare(target, cancel_check=self.isInterruptionRequested)
                         if not images:
                             self.log.emit(self.tr["status_skip"].format(name=target.name))
                             continue
@@ -76,35 +76,42 @@ class ConversionWorker(QThread):
 
                         if needs_cbz:
                             base = temp_dir if temp_dir else target
-                            cbz_path = self.converter.to_cbz(images, filename, self.cbz_out, base_dir=base)
+                            cbz_path = self.converter.to_cbz(images, filename, self.cbz_out, base_dir=base, cancel_check=self.isInterruptionRequested)
                             self.log.emit(self.tr["status_success_cbz"].format(name=cbz_path.name))
                         elif self.make_cbz and self.cbz_out:
                             self.log.emit(self.tr["status_skip_format"].format(fmt="CBZ", name=target.name))
 
                         if needs_pdf:
-                            pdf_path = self.converter.to_pdf(images, filename, self.pdf_out)
+                            pdf_path = self.converter.to_pdf(images, filename, self.pdf_out, cancel_check=self.isInterruptionRequested)
                             self.log.emit(self.tr["status_success_pdf"].format(name=pdf_path.name))
                         elif self.make_pdf and self.pdf_out:
                             self.log.emit(self.tr["status_skip_format"].format(fmt="PDF", name=target.name))
 
                         if needs_zip:
                             base = temp_dir if temp_dir else target
-                            zip_path = self.converter.to_zip(images, filename, self.zip_out, base_dir=base)
+                            zip_path = self.converter.to_zip(images, filename, self.zip_out, base_dir=base, cancel_check=self.isInterruptionRequested)
                             self.log.emit(self.tr["status_success_zip"].format(name=zip_path.name))
                         elif self.make_zip and self.zip_out:
                             self.log.emit(self.tr["status_skip_format"].format(fmt="ZIP", name=target.name))
 
+                    except InterruptedError:
+                        self.log.emit(self.tr["status_interrupted"])
+                        break
                     except Exception as e:
                         self.log.emit(self.tr["status_error_target"].format(name=target.name, error=str(e)))
                     finally:
                         self.converter.cleanup(temp_dir)
                 finally:
-                    # Always advance the progress bar, even on skip/error, so it reaches 100%.
+                    # Always advance the progress bar, even on skip/error/cancel, so it reaches 100%.
                     self.progress.emit(int(((i + 1) / total) * 100))
 
-            self.log.emit(self.tr["status_done"])
+            if not self.isInterruptionRequested():
+                self.log.emit(self.tr["status_done"])
             self.done.emit()
 
+        except InterruptedError:
+            self.log.emit(self.tr["status_interrupted"])
+            self.done.emit()
         except Exception as e:
             self.error.emit(str(e))
 
@@ -212,7 +219,7 @@ class MainWindow(QMainWindow):
         self.btn_start = QPushButton()
         self.btn_start.setObjectName("primary")
         self.btn_start.setMinimumHeight(ThemeManager.BUTTON_HEIGHT_PRIMARY)
-        self.btn_start.clicked.connect(self.start_conversion)
+        self.btn_start.clicked.connect(self.on_start_clicked)
         layout.addWidget(self.btn_start)
         
         # Progress Bar
@@ -255,7 +262,10 @@ class MainWindow(QMainWindow):
         self.input_cbz.setPlaceholderText(self.tr["placeholder_folder"])
         self.input_pdf.setPlaceholderText(self.tr["placeholder_folder"])
         self.input_zip.setPlaceholderText(self.tr["placeholder_folder"])
-        self.btn_start.setText(self.tr["btn_start"])
+        if self.worker is not None and self.worker.isRunning():
+            self.btn_start.setText(self.tr["btn_cancel"])
+        else:
+            self.btn_start.setText(self.tr["btn_start"])
         self.log_label.setText(self.tr["log_label"])
         self.btn_theme.setText(self.tr["theme_toggle"])
         self.btn_help.setText(self.tr["btn_help"])
@@ -351,6 +361,14 @@ class MainWindow(QMainWindow):
         self.log_list.addItem(text)
         self.log_list.scrollToBottom()
 
+    def on_start_clicked(self):
+        if self.worker is not None and self.worker.isRunning():
+            self.btn_start.setEnabled(False)
+            self.append_log(self.tr["status_interrupting"])
+            self.worker.requestInterruption()
+        else:
+            self.start_conversion()
+
     def start_conversion(self):
         source_paths = [self.source_list.item(i).text() for i in range(self.source_list.count())]
         cbz_out = self.input_cbz.text()
@@ -377,7 +395,11 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, self.tr["msg_error"], self.tr["msg_select_zip"])
             return
 
-        self.btn_start.setEnabled(False)
+        self.btn_start.setText(self.tr["btn_cancel"])
+        self.btn_start.setObjectName("secondary")
+        self.btn_start.style().unpolish(self.btn_start)
+        self.btn_start.style().polish(self.btn_start)
+        
         self.progress_bar.setValue(0)
         self.log_list.clear()
 
@@ -388,13 +410,20 @@ class MainWindow(QMainWindow):
         self.worker.done.connect(self.conversion_finished)
         self.worker.start()
 
+    def _reset_start_button(self):
+        self.btn_start.setText(self.tr["btn_start"])
+        self.btn_start.setObjectName("primary")
+        self.btn_start.setEnabled(True)
+        self.btn_start.style().unpolish(self.btn_start)
+        self.btn_start.style().polish(self.btn_start)
+
     def handle_error(self, msg):
         self.append_log(f"{self.tr['msg_critical']} {msg}")
         QMessageBox.critical(self, self.tr["msg_error"], f"{self.tr['msg_critical']}\n{msg}")
-        self.btn_start.setEnabled(True)
+        self._reset_start_button()
 
     def conversion_finished(self):
-        self.btn_start.setEnabled(True)
+        self._reset_start_button()
 
     def closeEvent(self, event):
         # Stop the worker gracefully so the QThread is not destroyed while running.

@@ -18,13 +18,15 @@ class ConversionWorker(QThread):
     done = Signal()  # renamed to avoid shadowing QThread.finished
     error = Signal(str)
 
-    def __init__(self, source_paths, cbz_out, pdf_out, make_cbz, make_pdf, lang):
+    def __init__(self, source_paths, cbz_out, pdf_out, zip_out, make_cbz, make_pdf, make_zip, lang):
         super().__init__()
         self.source_paths = source_paths
         self.cbz_out = cbz_out
         self.pdf_out = pdf_out
+        self.zip_out = zip_out
         self.make_cbz = make_cbz
         self.make_pdf = make_pdf
+        self.make_zip = make_zip
         self.lang = lang
         self.tr = TRANSLATIONS[lang]
         self.converter = OptimizedMediaConverter()
@@ -53,11 +55,13 @@ class ConversionWorker(QThread):
                     # Only a real .cbz is already in target format; a .zip of images
                     # is still worth repackaging into .cbz.
                     is_cbz_source = target.is_file() and target.suffix.lower() == '.cbz'
+                    is_zip_source = target.is_file() and target.suffix.lower() == '.zip'
 
                     needs_cbz = self.make_cbz and self.cbz_out and not is_cbz_source
                     needs_pdf = self.make_pdf and self.pdf_out and not is_pdf_source
+                    needs_zip = self.make_zip and self.zip_out and not is_zip_source
 
-                    if not needs_cbz and not needs_pdf:
+                    if not needs_cbz and not needs_pdf and not needs_zip:
                         self.log.emit(self.tr["status_skip_all_same"].format(name=target.name))
                         continue
 
@@ -82,6 +86,13 @@ class ConversionWorker(QThread):
                             self.log.emit(self.tr["status_success_pdf"].format(name=pdf_path.name))
                         elif self.make_pdf and self.pdf_out:
                             self.log.emit(self.tr["status_skip_format"].format(fmt="PDF", name=target.name))
+
+                        if needs_zip:
+                            base = temp_dir if temp_dir else target
+                            zip_path = self.converter.to_zip(images, filename, self.zip_out, base_dir=base)
+                            self.log.emit(self.tr["status_success_zip"].format(name=zip_path.name))
+                        elif self.make_zip and self.zip_out:
+                            self.log.emit(self.tr["status_skip_format"].format(fmt="ZIP", name=target.name))
 
                     except Exception as e:
                         self.log.emit(self.tr["status_error_target"].format(name=target.name, error=str(e)))
@@ -181,16 +192,21 @@ class MainWindow(QMainWindow):
         self.chk_cbz.setChecked(True)
         self.chk_pdf = QCheckBox()
         self.chk_pdf.setChecked(True)
+        self.chk_zip = QCheckBox()
+        self.chk_zip.setChecked(False)
         formats_layout.addWidget(self.chk_cbz)
         formats_layout.addWidget(self.chk_pdf)
+        formats_layout.addWidget(self.chk_zip)
         formats_layout.addStretch()
         layout.addLayout(formats_layout)
-        
+
         # Output Folders
         self.cbz_picker, self.cbz_lbl, self.input_cbz, self.btn_cbz_browse = self._create_folder_picker("cbz")
         self.pdf_picker, self.pdf_lbl, self.input_pdf, self.btn_pdf_browse = self._create_folder_picker("pdf")
+        self.zip_picker, self.zip_lbl, self.input_zip, self.btn_zip_browse = self._create_folder_picker("zip")
         layout.addWidget(self.cbz_picker)
         layout.addWidget(self.pdf_picker)
+        layout.addWidget(self.zip_picker)
         
         # Start Button
         self.btn_start = QPushButton()
@@ -215,9 +231,11 @@ class MainWindow(QMainWindow):
 
         self.chk_cbz.stateChanged.connect(self._toggle_pickers)
         self.chk_pdf.stateChanged.connect(self._toggle_pickers)
-        
+        self.chk_zip.stateChanged.connect(self._toggle_pickers)
+
         self.worker = None
         self._apply_translations()
+        self._toggle_pickers()  # sync picker visibility with the checkbox defaults
 
     def _apply_translations(self):
         self.tr = TRANSLATIONS[self.lang]
@@ -230,10 +248,13 @@ class MainWindow(QMainWindow):
         self.btn_clear.setText(self.tr["btn_clear"])
         self.chk_cbz.setText(self.tr["chk_cbz"])
         self.chk_pdf.setText(self.tr["chk_pdf"])
+        self.chk_zip.setText(self.tr["chk_zip"])
         self.cbz_lbl.setText(self.tr["cbz_out_label"])
         self.pdf_lbl.setText(self.tr["pdf_out_label"])
+        self.zip_lbl.setText(self.tr["zip_out_label"])
         self.input_cbz.setPlaceholderText(self.tr["placeholder_folder"])
         self.input_pdf.setPlaceholderText(self.tr["placeholder_folder"])
+        self.input_zip.setPlaceholderText(self.tr["placeholder_folder"])
         self.btn_start.setText(self.tr["btn_start"])
         self.log_label.setText(self.tr["log_label"])
         self.btn_theme.setText(self.tr["theme_toggle"])
@@ -321,7 +342,10 @@ class MainWindow(QMainWindow):
     def _toggle_pickers(self):
         self.cbz_picker.setVisible(self.chk_cbz.isChecked())
         self.pdf_picker.setVisible(self.chk_pdf.isChecked())
-        self.btn_start.setEnabled(self.chk_cbz.isChecked() or self.chk_pdf.isChecked())
+        self.zip_picker.setVisible(self.chk_zip.isChecked())
+        self.btn_start.setEnabled(
+            self.chk_cbz.isChecked() or self.chk_pdf.isChecked() or self.chk_zip.isChecked()
+        )
 
     def append_log(self, text):
         self.log_list.addItem(text)
@@ -331,27 +355,33 @@ class MainWindow(QMainWindow):
         source_paths = [self.source_list.item(i).text() for i in range(self.source_list.count())]
         cbz_out = self.input_cbz.text()
         pdf_out = self.input_pdf.text()
-        
+        zip_out = self.input_zip.text()
+
         make_cbz = self.chk_cbz.isChecked()
         make_pdf = self.chk_pdf.isChecked()
-        
+        make_zip = self.chk_zip.isChecked()
+
         if not source_paths:
             QMessageBox.warning(self, self.tr["msg_error"], self.tr["msg_select_source"])
             return
-            
+
         if make_cbz and not cbz_out:
             QMessageBox.warning(self, self.tr["msg_error"], self.tr["msg_select_cbz"])
             return
-            
+
         if make_pdf and not pdf_out:
             QMessageBox.warning(self, self.tr["msg_error"], self.tr["msg_select_pdf"])
+            return
+
+        if make_zip and not zip_out:
+            QMessageBox.warning(self, self.tr["msg_error"], self.tr["msg_select_zip"])
             return
 
         self.btn_start.setEnabled(False)
         self.progress_bar.setValue(0)
         self.log_list.clear()
-        
-        self.worker = ConversionWorker(source_paths, cbz_out, pdf_out, make_cbz, make_pdf, self.lang)
+
+        self.worker = ConversionWorker(source_paths, cbz_out, pdf_out, zip_out, make_cbz, make_pdf, make_zip, self.lang)
         self.worker.log.connect(self.append_log)
         self.worker.progress.connect(self.progress_bar.setValue)
         self.worker.error.connect(self.handle_error)

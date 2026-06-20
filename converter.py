@@ -108,20 +108,26 @@ class OptimizedMediaConverter:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def to_cbz(self, images, filename, output_dir, base_dir=None):
+        return self._to_archive(images, filename, output_dir, "cbz", base_dir)
+
+    def to_zip(self, images, filename, output_dir, base_dir=None):
+        return self._to_archive(images, filename, output_dir, "zip", base_dir)
+
+    def _to_archive(self, images, filename, output_dir, ext, base_dir=None):
         if not images:
             raise FileNotFoundError("Изображения не найдены.")
 
-        cbz_path = self._unique_path(Path(output_dir) / f"{filename}.cbz")
+        out_path = self._unique_path(Path(output_dir) / f"{filename}.{ext}")
 
-        with zipfile.ZipFile(cbz_path, 'w', zipfile.ZIP_DEFLATED) as cbz:
+        with zipfile.ZipFile(out_path, 'w', zipfile.ZIP_DEFLATED) as archive:
             for img in images:
                 if base_dir:
                     arcname = str(img.relative_to(base_dir))
                 else:
                     arcname = img.name
-                cbz.write(img, arcname=arcname)
-        
-        return cbz_path
+                archive.write(img, arcname=arcname)
+
+        return out_path
 
     def to_pdf(self, images_paths, filename, output_dir):
         if not images_paths:

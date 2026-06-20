@@ -8,14 +8,17 @@ TRANSLATIONS = {
         "btn_clear": "Очистить список",
         "chk_cbz": "Генерировать CBZ",
         "chk_pdf": "Генерировать PDF",
+        "chk_zip": "Генерировать ZIP",
         "cbz_out_label": "Папка вывода для CBZ:",
         "pdf_out_label": "Папка вывода для PDF:",
+        "zip_out_label": "Папка вывода для ZIP:",
         "btn_start": "Начать конвертацию",
         "log_label": "Журнал операций:",
         "btn_help": "Помощь",
         "msg_select_source": "Пожалуйста, добавьте хотя бы один исходный файл или папку.",
         "msg_select_cbz": "Пожалуйста, выберите папку для сохранения CBZ.",
         "msg_select_pdf": "Пожалуйста, выберите папку для сохранения PDF.",
+        "msg_select_zip": "Пожалуйста, выберите папку для сохранения ZIP.",
         "msg_error": "Ошибка",
         "msg_critical": "Произошла ошибка:",
         "status_scan": "Сканирование исходных путей...",
@@ -27,6 +30,7 @@ TRANSLATIONS = {
         "status_skip_format": "Пропуск {fmt} для {name} (уже в этом формате)",
         "status_success_cbz": " ✓ Создан CBZ: {name}",
         "status_success_pdf": " ✓ Создан PDF: {name}",
+        "status_success_zip": " ✓ Создан ZIP: {name}",
         "status_error_target": " Ошибка при обработке {name}: {error}",
         "status_done": "Конвертация завершена успешно!",
         "help_title": "Справка: Как использовать ComiConv",
@@ -34,7 +38,8 @@ TRANSLATIONS = {
             "<b>Добавить файлы</b>: Выберите один или несколько файлов (.zip, .cbz, .pdf) для обработки.<br><br>"
             "<b>Добавить папку</b>: Выберите папку. Программа автоматически найдет все картинки и вложенные архивы внутри неё.<br><br>"
             "<b>Удаление</b>: Выберите элемент в списке и нажмите <b>Delete</b> (или дважды кликните по нему).<br><br>"
-            "<b>Форматы</b>: Укажите, куда сохранить готовые файлы. CBZ — формат для электронных читалок комиксов. PDF — универсальный документ.<br><br>"
+            "<b>Форматы</b>: Укажите, куда сохранить готовые файлы. CBZ — формат для электронных читалок комиксов. PDF — универсальный документ. "
+            "ZIP — обычный архив с картинками: его удобно открыть, удалить лишнее изображение и снова добавить в программу, чтобы пересобрать комикс.<br><br>"
             "<i>Все выбранные файлы будут конвертированы в фоновом режиме без зависаний!</i>"
         ),
         "dlg_select_archives": "Выберите файлы с комиксами",
@@ -52,14 +57,17 @@ TRANSLATIONS = {
         "btn_clear": "Clear List",
         "chk_cbz": "Generate CBZ",
         "chk_pdf": "Generate PDF",
+        "chk_zip": "Generate ZIP",
         "cbz_out_label": "Output folder for CBZ:",
         "pdf_out_label": "Output folder for PDF:",
+        "zip_out_label": "Output folder for ZIP:",
         "btn_start": "Start Conversion",
         "log_label": "Operation Log:",
         "btn_help": "Help",
         "msg_select_source": "Please add at least one source file or folder.",
         "msg_select_cbz": "Please select an output folder for CBZ.",
         "msg_select_pdf": "Please select an output folder for PDF.",
+        "msg_select_zip": "Please select an output folder for ZIP.",
         "msg_error": "Error",
         "msg_critical": "An error occurred:",
         "status_scan": "Scanning source paths...",
@@ -71,6 +79,7 @@ TRANSLATIONS = {
         "status_skip_format": "Skipping {fmt} for {name} (already in this format)",
         "status_success_cbz": " ✓ Created CBZ: {name}",
         "status_success_pdf": " ✓ Created PDF: {name}",
+        "status_success_zip": " ✓ Created ZIP: {name}",
         "status_error_target": " Error processing {name}: {error}",
         "status_done": "Conversion completed successfully!",
         "help_title": "Help: How to use ComiConv",
@@ -78,7 +87,8 @@ TRANSLATIONS = {
             "<b>Add Files</b>: Select one or more files (.zip, .cbz, .pdf) to process.<br><br>"
             "<b>Add Folder</b>: Select a directory. The program will recursively find all images and archives inside it.<br><br>"
             "<b>Removing</b>: Select an item in the list and press <b>Delete</b> (or double-click it).<br><br>"
-            "<b>Formats</b>: Choose where to save the files. CBZ is for comic readers. PDF is a universal document.<br><br>"
+            "<b>Formats</b>: Choose where to save the files. CBZ is for comic readers. PDF is a universal document. "
+            "ZIP is a plain image archive — handy to open, remove an unwanted image, and feed back into the app to rebuild the comic.<br><br>"
             "<i>All selected files will be converted in the background without freezing!</i>"
         ),
         "dlg_select_archives": "Select comic files",

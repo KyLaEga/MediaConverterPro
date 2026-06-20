@@ -208,9 +208,9 @@ class MainWindow(QMainWindow):
         layout.addLayout(formats_layout)
 
         # Output Folders
-        self.cbz_picker, self.cbz_lbl, self.input_cbz, self.btn_cbz_browse = self._create_folder_picker("cbz")
-        self.pdf_picker, self.pdf_lbl, self.input_pdf, self.btn_pdf_browse = self._create_folder_picker("pdf")
-        self.zip_picker, self.zip_lbl, self.input_zip, self.btn_zip_browse = self._create_folder_picker("zip")
+        self.cbz_picker, self.cbz_lbl, self.input_cbz, self.btn_cbz_browse = self._create_folder_picker()
+        self.pdf_picker, self.pdf_lbl, self.input_pdf, self.btn_pdf_browse = self._create_folder_picker()
+        self.zip_picker, self.zip_lbl, self.input_zip, self.btn_zip_browse = self._create_folder_picker()
         layout.addWidget(self.cbz_picker)
         layout.addWidget(self.pdf_picker)
         layout.addWidget(self.zip_picker)
@@ -317,7 +317,7 @@ class MainWindow(QMainWindow):
         for item in self.source_list.selectedItems():
             self.source_list.takeItem(self.source_list.row(item))
 
-    def _create_folder_picker(self, attr_prefix):
+    def _create_folder_picker(self):
         widget = QWidget()
         lay = QVBoxLayout(widget)
         lay.setContentsMargins(0, 0, 0, 0)
@@ -353,12 +353,18 @@ class MainWindow(QMainWindow):
         self.cbz_picker.setVisible(self.chk_cbz.isChecked())
         self.pdf_picker.setVisible(self.chk_pdf.isChecked())
         self.zip_picker.setVisible(self.chk_zip.isChecked())
-        self.btn_start.setEnabled(
-            self.chk_cbz.isChecked() or self.chk_pdf.isChecked() or self.chk_zip.isChecked()
-        )
+        # While a conversion runs the button acts as "Cancel" — never disable it here,
+        # otherwise unchecking every format would make the run impossible to cancel.
+        if self.worker is None or not self.worker.isRunning():
+            self.btn_start.setEnabled(
+                self.chk_cbz.isChecked() or self.chk_pdf.isChecked() or self.chk_zip.isChecked()
+            )
 
     def append_log(self, text):
         self.log_list.addItem(text)
+        # Cap the log so very large batches don't grow memory without bound.
+        while self.log_list.count() > 1000:
+            self.log_list.takeItem(0)
         self.log_list.scrollToBottom()
 
     def on_start_clicked(self):
@@ -413,7 +419,10 @@ class MainWindow(QMainWindow):
     def _reset_start_button(self):
         self.btn_start.setText(self.tr["btn_start"])
         self.btn_start.setObjectName("primary")
-        self.btn_start.setEnabled(True)
+        # Re-enable according to the selected formats (avoid isRunning() race here).
+        self.btn_start.setEnabled(
+            self.chk_cbz.isChecked() or self.chk_pdf.isChecked() or self.chk_zip.isChecked()
+        )
         self.btn_start.style().unpolish(self.btn_start)
         self.btn_start.style().polish(self.btn_start)
 

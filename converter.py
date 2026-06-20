@@ -47,20 +47,15 @@ class OptimizedMediaConverter:
                 for root, dirs, files in os.walk(source):
                     if cancel_check and cancel_check():
                         raise InterruptedError("Операция прервана")
-                    
-                    # 1. Check files in this directory for archives/PDFs
+
+                    # Single pass: collect archives/PDFs and note any image in this dir.
+                    has_images = False
                     for f in files:
                         ext = os.path.splitext(f)[1].lower()
                         if ext in ('.zip', '.cbz', '.pdf'):
                             targets.add(Path(root) / f)
-                            
-                    # 2. Check if this directory contains any images
-                    has_images = False
-                    for f in files:
-                        ext = os.path.splitext(f)[1].lower()
-                        if ext in self.valid_extensions:
+                        elif ext in self.valid_extensions:
                             has_images = True
-                            break
                     if has_images:
                         targets.add(Path(root))
                             

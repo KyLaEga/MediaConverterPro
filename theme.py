@@ -1,11 +1,7 @@
-import os
-import sys
-from pathlib import Path
-
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QPalette, QColor, QIcon, QPixmap
 from PySide6.QtCore import QByteArray
-from PySide6 import QtSvg  # noqa: F401
+from PySide6 import QtSvg  # noqa: F401  (registers the SVG image handler for make_icon)
 
 class ThemeManager:
     DARK = {
@@ -23,31 +19,13 @@ class ThemeManager:
 
     FONT_CAPTION = 11
     FONT_BASE = 13
-    FONT_HEADER = 16
     FONT_H1 = 20
 
     BUTTON_HEIGHT_PRIMARY = 40
     BUTTON_HEIGHT_ICON = 40
 
     ICON_GLYPHS = {
-        "play": "M8 5v14l11-7z",
-        "pause": "M6 19h4V5H6v14zm8-14v14h4V5h-4z",
-        "stop": "M6 6h12v12H6z",
-        "scan": ("M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 "
-                 "13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 "
-                 "4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 "
-                 "11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"),
-        "volume": ("M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05"
-                   "c1.48-.73 2.5-2.25 2.5-4.02z"),
-        "volume_muted": ("M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45"
-                         "c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64"
-                         "l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86"
-                         "-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 "
-                         "7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 "
-                         "1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 "
-                         "19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z"),
         "folder": "M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z",
-        "settings": "M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z",
         "book": "M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z",
         "info": "M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
     }
@@ -76,7 +54,6 @@ class ThemeManager:
     def _typography_qss(cls) -> str:
         return (
             f'QLabel[txt="h1"] {{ font-size: {cls.FONT_H1}px; font-weight: bold; }}'
-            f'QLabel[txt="h2"] {{ font-size: {cls.FONT_HEADER}px; font-weight: bold; }}'
             f'QLabel[txt="body"] {{ font-size: {cls.FONT_BASE}px; }}'
             f'QLabel[txt="caption"] {{ font-size: {cls.FONT_CAPTION}px; }}'
         )
@@ -95,62 +72,50 @@ class ThemeManager:
         app.setPalette(palette)
 
         qss = """
-        QMainWindow, QWidget#sidebar { background-color: #1E1F22; }
-        QWidget#card { background-color: #2B2D31; border-radius: 8px; }
-        QWidget#toolbar_flat { background-color: #2B2D31; border-radius: 6px; }
-        QWidget#controls_panel, QWidget#bottom_btns, QWidget#multi_slider_panel { background-color: #2B2D31; border-top: 1px solid #1E1F22; }
-        
-        QPushButton { 
-            background-color: #404249; color: #DBDEE1; 
-            border: none; border-radius: 6px; 
-            padding: 5px 12px; font-weight: 500; 
+        QMainWindow { background-color: #1E1F22; }
+
+        QPushButton {
+            background-color: #404249; color: #DBDEE1;
+            border: none; border-radius: 6px;
+            padding: 5px 12px; font-weight: 500;
         }
         QPushButton:hover { background-color: #4E5058; }
         QPushButton:pressed { background-color: #313338; }
         QPushButton:disabled { background-color: #313338; color: #5C5E66; }
-        
+
         QPushButton#primary { background-color: #23A559; color: white; font-weight: bold; }
         QPushButton#primary:hover { background-color: #1D8A4A; }
-        QPushButton#action { background-color: #5865F2; color: white; }
-        QPushButton#action:hover { background-color: #4752C4; }
-        
-        QPushButton#secondary { 
-            background-color: transparent; 
-            border: 1px solid #4E5058; 
+
+        QPushButton#secondary {
+            background-color: transparent;
+            border: 1px solid #4E5058;
             border-radius: 6px;
-            padding: 4px 10px; 
+            padding: 4px 10px;
             color: #DBDEE1;
         }
         QPushButton#secondary:hover { background-color: #3F4147; border: 1px solid #5865F2; }
-        
-        QLineEdit { 
-            background-color: #1E1F22; color: #FFFFFF; 
-            border: 1px solid #4E5058; border-radius: 6px; 
+
+        QLineEdit {
+            background-color: #1E1F22; color: #FFFFFF;
+            border: 1px solid #4E5058; border-radius: 6px;
             padding: 6px 10px; selection-background-color: #5865F2;
         }
         QLineEdit:focus { border: 1px solid #5865F2; }
-        
+
         QCheckBox { spacing: 8px; color: #DBDEE1; font-weight: 500; }
         QCheckBox::indicator { width: 18px; height: 18px; border-radius: 4px; border: 2px solid #5865F2; background: transparent; }
         QCheckBox::indicator:checked { background: #5865F2; border: 2px solid #5865F2; image: url(none); }
         QCheckBox::indicator:checked:pressed { background: #4752C4; border-color: #4752C4; }
 
-        QCheckBox::indicator:checked {
-            background-color: #5865F2;
-            border: 2px solid #5865F2;
-        }
-        
         QLabel { color: #DBDEE1; }
-        QLabel#status { color: #949BA4; }
-        QLabel#stat_val { color: #23A559; font-weight: bold; }
-        
+
         QProgressBar { border: none; background-color: #1E1F22; border-radius: 4px; text-align: center; color: white; font-weight: bold; }
         QProgressBar::chunk { background-color: #5865F2; border-radius: 4px; }
-        
+
         QListWidget { background-color: #1E1F22; border: 1px solid #4E5058; border-radius: 6px; color: #DBDEE1; outline: none; padding: 4px; }
         QListWidget::item { padding: 6px; border-radius: 4px; }
         QListWidget::item:selected { background-color: #3F4147; color: white; }
-        
+
         QComboBox { background-color: #1E1F22; color: #FFFFFF; border: 1px solid #4E5058; border-radius: 6px; padding: 4px 10px; }
         QComboBox:hover { border: 1px solid #5865F2; }
         QComboBox::drop-down { border: none; width: 20px; }
@@ -172,65 +137,49 @@ class ThemeManager:
         app.setPalette(palette)
 
         qss = """
-        QMainWindow, QWidget#sidebar { background-color: #F2F3F5; }
-        QWidget#card { background-color: #FFFFFF; border-radius: 8px; border: 1px solid #E3E5E8; }
-        QWidget#toolbar_flat { background-color: #FFFFFF; border-radius: 6px; border: 1px solid #E3E5E8; }
-        QWidget#controls_panel, QWidget#bottom_btns, QWidget#multi_slider_panel { background-color: #FFFFFF; border-top: 1px solid #E3E5E8; }
-        
+        QMainWindow { background-color: #F2F3F5; }
+
         QPushButton { background-color: #E3E5E8; color: #313338; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 500; }
         QPushButton:hover { background-color: #D4D7DC; }
         QPushButton:pressed { background-color: #B5BAC1; }
         QPushButton:disabled { background-color: #E3E5E8; color: #949BA4; }
-        
+
         QPushButton#primary { background-color: #23A559; color: white; font-weight: bold; }
         QPushButton#primary:hover { background-color: #1D8A4A; }
-        QPushButton#action { background-color: #5865F2; color: white; }
-        QPushButton#action:hover { background-color: #4752C4; }
-        
-        QPushButton#secondary { 
-            background-color: transparent; 
-            border: 1px solid #D4D7DC; 
-            border-radius: 6px; 
-            padding: 4px 10px; 
-            color: #313338; 
+
+        QPushButton#secondary {
+            background-color: transparent;
+            border: 1px solid #D4D7DC;
+            border-radius: 6px;
+            padding: 4px 10px;
+            color: #313338;
         }
         QPushButton#secondary:hover { background-color: #E3E5E8; border: 1px solid #5865F2; }
-        
-        QLineEdit { 
-            background-color: #FFFFFF; color: #313338; 
-            border: 1px solid #D4D7DC; border-radius: 6px; 
+
+        QLineEdit {
+            background-color: #FFFFFF; color: #313338;
+            border: 1px solid #D4D7DC; border-radius: 6px;
             padding: 6px 10px; selection-background-color: #5865F2; selection-color: white;
         }
         QLineEdit:focus { border: 1px solid #5865F2; }
-        
+
         QCheckBox { spacing: 8px; color: #313338; font-weight: 500; }
         QCheckBox::indicator { width: 18px; height: 18px; border-radius: 4px; border: 2px solid #5865F2; background: transparent; }
         QCheckBox::indicator:checked { background: #5865F2; border: 2px solid #5865F2; image: url(none); }
         QCheckBox::indicator:checked:pressed { background: #4752C4; border-color: #4752C4; }
-        
+
         QLabel { color: #313338; }
-        QLabel#status { color: #5C5E66; }
-        QLabel#stat_val { color: #23A559; font-weight: bold; }
-        
+
         QProgressBar { border: none; background-color: #E3E5E8; border-radius: 4px; text-align: center; color: #313338; font-weight: bold; }
         QProgressBar::chunk { background-color: #5865F2; border-radius: 4px; }
-        
+
         QListWidget { background-color: #FFFFFF; border: 1px solid #E3E5E8; border-radius: 6px; color: #313338; outline: none; padding: 4px; }
         QListWidget::item { padding: 6px; border-radius: 4px; }
         QListWidget::item:selected { background-color: #E3E5E8; color: #000000; }
-        
+
         QComboBox { background-color: #FFFFFF; color: #313338; border: 1px solid #D4D7DC; border-radius: 6px; padding: 4px 10px; }
         QComboBox:hover { border: 1px solid #5865F2; }
         QComboBox::drop-down { border: none; width: 20px; }
         QComboBox QAbstractItemView { background-color: #FFFFFF; color: #313338; border: 1px solid #D4D7DC; border-radius: 6px; selection-background-color: #E3E5E8; selection-color: #000000; outline: none; }
         """
         app.setStyleSheet(qss + cls._typography_qss())
-
-    @classmethod
-    def apply_system_theme(cls, app: QApplication):
-        app.setStyle("Fusion")
-        std = app.style().standardPalette()
-        app.setPalette(std)
-        app.setStyleSheet(cls._typography_qss())
-        window = std.color(QPalette.ColorRole.Window)
-        cls._active = cls.DARK if window.lightnessF() < 0.5 else cls.LIGHT

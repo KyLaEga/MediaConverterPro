@@ -15,6 +15,19 @@ class OptimizedMediaConverter:
         return [int(text) if text.isdigit() else text.lower()
                 for text in re.split(r'(\d+)', str(s))]
 
+    @staticmethod
+    def _unique_path(path):
+        """Return a non-existing path, adding a ' (2)', ' (3)'… suffix if needed."""
+        if not path.exists():
+            return path
+        stem, suffix = path.stem, path.suffix
+        i = 2
+        while True:
+            candidate = path.with_name(f"{stem} ({i}){suffix}")
+            if not candidate.exists():
+                return candidate
+            i += 1
+
     def find_comics(self, source_paths):
         """Scans a list of paths (files or directories) and returns a list of targets."""
         targets = set()  # Use set to avoid duplicates
@@ -82,8 +95,10 @@ class OptimizedMediaConverter:
             return images, temp_extract
             
         elif source.is_dir():
-            images = [p for p in source.rglob('*') if p.is_file() and p.suffix.lower() in self.valid_extensions]
-            images.sort(key=lambda x: self._natural_sort_key(str(x.relative_to(source))))
+            # Only direct images: nested image folders are separate targets (see find_comics),
+            # so recursing here would duplicate their pages into the parent's output.
+            images = [p for p in source.iterdir() if p.is_file() and p.suffix.lower() in self.valid_extensions]
+            images.sort(key=lambda x: self._natural_sort_key(x.name))
             return images, None
         else:
             raise ValueError(f"Неизвестный тип источника: {source.name}")
@@ -93,10 +108,10 @@ class OptimizedMediaConverter:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def to_cbz(self, images, filename, output_dir, base_dir=None):
-        cbz_path = Path(output_dir) / f"{filename}.cbz"
-        
         if not images:
             raise FileNotFoundError("Изображения не найдены.")
+
+        cbz_path = self._unique_path(Path(output_dir) / f"{filename}.cbz")
 
         with zipfile.ZipFile(cbz_path, 'w', zipfile.ZIP_DEFLATED) as cbz:
             for img in images:
@@ -109,21 +124,30 @@ class OptimizedMediaConverter:
         return cbz_path
 
     def to_pdf(self, images_paths, filename, output_dir):
-        pdf_path = Path(output_dir) / f"{filename}.pdf"
-            
         if not images_paths:
             raise FileNotFoundError("Изображения не найдены.")
 
+        pdf_path = self._unique_path(Path(output_dir) / f"{filename}.pdf")
+
         doc = fitz.open()
-        for img_path in images_paths:
-            img_doc = fitz.open(img_path)
-            pdf_bytes = img_doc.convert_to_pdf()
-            img_doc.close()
-            
-            page_doc = fitz.open("pdf", pdf_bytes)
-            doc.insert_pdf(page_doc)
-            page_doc.close()
-            
-        doc.save(pdf_path)
-        doc.close()
+        try:
+            for img_path in images_paths:
+                try:
+                    img_doc = fitz.open(img_path)
+                    pdf_bytes = img_doc.convert_to_pdf()
+                    img_doc.close()
+
+                    page_doc = fitz.open("pdf", pdf_bytes)
+                    doc.insert_pdf(page_doc)
+                    page_doc.close()
+                except Exception:
+                    # Skip a single broken image instead of failing the whole document.
+                    continue
+
+            if doc.page_count == 0:
+                raise ValueError("Не удалось добавить ни одной страницы в PDF.")
+
+            doc.save(pdf_path)
+        finally:
+            doc.close()
         return pdf_path

@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QLabel, QPushButton, QLineEdit, QFileDialog, QCheckBox,
     QProgressBar, QListWidget, QMessageBox, QComboBox
 )
-from PySide6.QtGui import QShortcut, QKeySequence
+from PySide6.QtGui import QShortcut, QKeySequence, QFontDatabase
 from PySide6.QtCore import QThread, Signal
 
 from theme import ThemeManager
@@ -15,7 +15,7 @@ from translations import TRANSLATIONS
 class ConversionWorker(QThread):
     progress = Signal(int)
     log = Signal(str)
-    finished = Signal()
+    done = Signal()  # renamed to avoid shadowing QThread.finished
     error = Signal(str)
 
     def __init__(self, source_paths, cbz_out, pdf_out, make_cbz, make_pdf, lang):
@@ -33,61 +33,67 @@ class ConversionWorker(QThread):
         try:
             self.log.emit(self.tr["status_scan"])
             targets = self.converter.find_comics(self.source_paths)
-            
+
             if not targets:
                 self.log.emit(self.tr["status_no_comics"])
-                self.finished.emit()
+                self.done.emit()
                 return
-                
+
             total = len(targets)
             self.log.emit(self.tr["status_found"].format(count=total))
-            
-            for i, target in enumerate(targets):
-                self.log.emit(self.tr["status_processing"].format(current=i+1, total=total, name=target.name))
-                
-                is_pdf_source = target.is_file() and target.suffix.lower() == '.pdf'
-                is_cbz_zip_source = target.is_file() and target.suffix.lower() in ('.cbz', '.zip')
-                
-                needs_cbz = self.make_cbz and self.cbz_out and not is_cbz_zip_source
-                needs_pdf = self.make_pdf and self.pdf_out and not is_pdf_source
-                
-                if not needs_cbz and not needs_pdf:
-                    self.log.emit(self.tr["status_skip_all_same"].format(name=target.name))
-                    self.progress.emit(int(((i + 1) / total) * 100))
-                    continue
 
-                temp_dir = None
+            for i, target in enumerate(targets):
+                if self.isInterruptionRequested():
+                    break
+
                 try:
-                    images, temp_dir = self.converter.extract_and_prepare(target)
-                    if not images:
-                        self.log.emit(self.tr["status_skip"].format(name=target.name))
+                    self.log.emit(self.tr["status_processing"].format(current=i+1, total=total, name=target.name))
+
+                    is_pdf_source = target.is_file() and target.suffix.lower() == '.pdf'
+                    # Only a real .cbz is already in target format; a .zip of images
+                    # is still worth repackaging into .cbz.
+                    is_cbz_source = target.is_file() and target.suffix.lower() == '.cbz'
+
+                    needs_cbz = self.make_cbz and self.cbz_out and not is_cbz_source
+                    needs_pdf = self.make_pdf and self.pdf_out and not is_pdf_source
+
+                    if not needs_cbz and not needs_pdf:
+                        self.log.emit(self.tr["status_skip_all_same"].format(name=target.name))
                         continue
-                        
-                    filename = target.stem if target.is_file() else target.name
-                    
-                    if needs_cbz:
-                        base = temp_dir if temp_dir else target
-                        cbz_path = self.converter.to_cbz(images, filename, self.cbz_out, base_dir=base)
-                        self.log.emit(self.tr["status_success_cbz"].format(name=cbz_path.name))
-                    elif self.make_cbz and self.cbz_out:
-                        self.log.emit(self.tr["status_skip_format"].format(fmt="CBZ", name=target.name))
-                        
-                    if needs_pdf:
-                        pdf_path = self.converter.to_pdf(images, filename, self.pdf_out)
-                        self.log.emit(self.tr["status_success_pdf"].format(name=pdf_path.name))
-                    elif self.make_pdf and self.pdf_out:
-                        self.log.emit(self.tr["status_skip_format"].format(fmt="PDF", name=target.name))
-                        
-                except Exception as e:
-                    self.log.emit(self.tr["status_error_target"].format(name=target.name, error=str(e)))
+
+                    temp_dir = None
+                    try:
+                        images, temp_dir = self.converter.extract_and_prepare(target)
+                        if not images:
+                            self.log.emit(self.tr["status_skip"].format(name=target.name))
+                            continue
+
+                        filename = target.stem if target.is_file() else target.name
+
+                        if needs_cbz:
+                            base = temp_dir if temp_dir else target
+                            cbz_path = self.converter.to_cbz(images, filename, self.cbz_out, base_dir=base)
+                            self.log.emit(self.tr["status_success_cbz"].format(name=cbz_path.name))
+                        elif self.make_cbz and self.cbz_out:
+                            self.log.emit(self.tr["status_skip_format"].format(fmt="CBZ", name=target.name))
+
+                        if needs_pdf:
+                            pdf_path = self.converter.to_pdf(images, filename, self.pdf_out)
+                            self.log.emit(self.tr["status_success_pdf"].format(name=pdf_path.name))
+                        elif self.make_pdf and self.pdf_out:
+                            self.log.emit(self.tr["status_skip_format"].format(fmt="PDF", name=target.name))
+
+                    except Exception as e:
+                        self.log.emit(self.tr["status_error_target"].format(name=target.name, error=str(e)))
+                    finally:
+                        self.converter.cleanup(temp_dir)
                 finally:
-                    self.converter.cleanup(temp_dir)
-                
-                self.progress.emit(int(((i + 1) / total) * 100))
-                
+                    # Always advance the progress bar, even on skip/error, so it reaches 100%.
+                    self.progress.emit(int(((i + 1) / total) * 100))
+
             self.log.emit(self.tr["status_done"])
-            self.finished.emit()
-            
+            self.done.emit()
+
         except Exception as e:
             self.error.emit(str(e))
 
@@ -128,6 +134,7 @@ class MainWindow(QMainWindow):
         
         self.btn_help = QPushButton()
         self.btn_help.setObjectName("secondary")
+        self.btn_help.setIcon(ThemeManager.make_icon("info", ThemeManager.colors()["text"]))
         self.btn_help.clicked.connect(self._show_help)
         top_layout.addWidget(self.btn_help)
         
@@ -348,7 +355,7 @@ class MainWindow(QMainWindow):
         self.worker.log.connect(self.append_log)
         self.worker.progress.connect(self.progress_bar.setValue)
         self.worker.error.connect(self.handle_error)
-        self.worker.finished.connect(self.conversion_finished)
+        self.worker.done.connect(self.conversion_finished)
         self.worker.start()
 
     def handle_error(self, msg):
@@ -359,12 +366,24 @@ class MainWindow(QMainWindow):
     def conversion_finished(self):
         self.btn_start.setEnabled(True)
 
+    def closeEvent(self, event):
+        # Stop the worker gracefully so the QThread is not destroyed while running.
+        if self.worker is not None and self.worker.isRunning():
+            self.worker.requestInterruption()
+            self.worker.quit()
+            if not self.worker.wait(5000):
+                self.worker.terminate()
+                self.worker.wait()
+        event.accept()
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     
-    font = app.font()
-    font.setFamily("Outfit")
-    app.setFont(font)
+    # Use "Outfit" only if it is actually available; otherwise keep the system default.
+    if "Outfit" in QFontDatabase.families():
+        font = app.font()
+        font.setFamily("Outfit")
+        app.setFont(font)
     
     ThemeManager.apply_modern_light(app)
     
